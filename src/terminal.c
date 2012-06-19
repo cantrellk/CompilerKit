@@ -31,7 +31,14 @@ static void compilerkit_terminal_dispose (GObject* object);
  */
 struct _CompilerKitTerminalPrivate
 {
-/** @todo Declare private members here */
+
+    /** @todo Declare private members here */
+    /**
+     * @todo dummy is here so everything will compile by default.
+     * If the class does not require private fields, search for private and remove all relevant macros, function calls, etc.
+     */ 
+    int dummy;
+
 };
 
 /**
@@ -92,9 +99,10 @@ compilerkit_terminal_init (CompilerKitTerminal *self)
  * @param None
  * @return A new CompilerKitTerminal struct.
  */
-CompilerKitTerminal* compilerkit_terminal_new (void)
+
+GObject *compilerkit_terminal_new (void)
 {
-	return COMPILERKIT_TERMINAL (g_object_new (COMPILERKIT_TYPE_TERMINAL, NULL));
+	return G_OBJECT(COMPILERKIT_TERMINAL (g_object_new (COMPILERKIT_TYPE_TERMINAL, NULL)));
 }
 
 /**
