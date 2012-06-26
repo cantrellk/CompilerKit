@@ -15,42 +15,32 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <glib.h>
 #include "CompilerKit.h"
+#include "CompilerKit/convenience.h"
 
-/** @todo Write test cases for Production.
- */
-
-/**
- * test_production_case:
- * @fn test_production_case
- * Tests compilerkit_production_case in CompilerKitProduction struct.
- * @pre None
- * @param None
- * @return void
- */
-void test_production_case (void)
+int compilerkit_character_is_alpha_numeric(gunichar character)
 {
-    CompilerKitProduction *obj;
-
-    g_test_message ("Testing Production case");
-    g_test_timer_start ();
-    
-    /** @todo Test here  */
-    g_assert(FALSE);
-    
-    g_object_unref (obj);
-
-    // This test shouldn't take too long to run
-    g_assert_cmpfloat(g_test_timer_elapsed (), <=, 1);
+	if(character < 47 || character > 122 || (character > 57 && character < 65) || (character > 90 && character < 97))
+		return 0;
+	return 1;
 }
 
-int main (int argc, char ** argv)
+GObject* compilerkit_character_class_new(gunichar hi, gunichar lo)
 {
-    g_test_init (&argc, &argv, NULL);
-    g_type_init ();
-
-    g_test_add_func ("/production/case", test_production_case);
+	GObject* newExpression;
+    int i;
     
-    g_test_run ();
+    if(!compilerkit_character_is_alpha_numeric(hi) || compilerkit_character_is_alpha_numeric(lo))
+		return NULL;
+    newExpression = G_OBJECT(compilerkit_symbol_new(lo));
+    for(i = lo+1;i <= hi;i++)
+    {
+        if(i == 58)
+            i = 65;
+        else if(i == 91)
+            i = 97;
+
+        newExpression = G_OBJECT(compilerkit_alternation_new(newExpression,G_OBJECT(compilerkit_symbol_new((gunichar)i))));
+    }
+    return newExpression;
 }
