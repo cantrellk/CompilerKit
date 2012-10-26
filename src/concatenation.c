@@ -109,6 +109,36 @@ GObject *compilerkit_concatenation_new (GObject *left, GObject *right)
 }
 
 /**
+ * compilerkit_concatenation_vlist_new:
+ * @fn compilerkit_concatenation_vlist_new
+ * @memberof CompilerKitConcatenation
+ * Construct a CompilerKitConcatenation instance.
+ * @pre All GObject* until the last one are all non NULL, and the last arg must be NULL.
+ * @param GObject* Left side of concatenation
+ * @param GObject* Right side of concatenation
+ * @param ... Comma separated list of GObject*, terminated by a NULL param
+ * @return A new CompilerKitConcatenation struct if concatenation is necessary otherwise return the single element or EmptySet.
+ */
+GObject *compilerkit_concatenation_vlist_new (GObject *left, GObject *right, ...)
+{
+	GObject* first;
+	GObject* second;
+	va_list args;
+	va_start(args,right);
+	
+	first = compilerkit_concatenation_new(left, right);
+		
+    while(second = va_arg(args, GObject*))
+    {
+        first = compilerkit_concatenation_new(first, second);
+    }
+	
+	va_end(args);
+
+    return first;
+}
+
+/**
  * compilerkit_concatenation_finalize:
  * @fn compilerkit_concatenation_finalize
  * Reverse what compilerkit_concatenation_class_init allocated.
@@ -152,6 +182,7 @@ compilerkit_concatenation_dispose (GObject* object)
  * @pre CompilerKitConcatenation* is not NULL.
  * @param CompilerKitConcatenation* The concatenation to query.
  * @return The left side of the concatenation.
+ * @memberof CompilerKitConcatenation
  */
 GObject* compilerkit_concatenation_get_left (CompilerKitConcatenation *self)
 {
@@ -165,6 +196,7 @@ GObject* compilerkit_concatenation_get_left (CompilerKitConcatenation *self)
  * @pre CompilerKitConcatenation* is not NULL.
  * @param CompilerKitConcatenation* The concatenation to query.
  * @return The right side of the concatenation.
+ * @memberof CompilerKitConcatenation
  */
 GObject* compilerkit_concatenation_get_right (CompilerKitConcatenation *self)
 {

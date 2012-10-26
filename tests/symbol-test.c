@@ -17,6 +17,7 @@
  */
 #include <glib.h>
 #include "CompilerKit.h"
+#include "test.h"
 
 /**
  * test_symbol_unicode:
@@ -31,11 +32,12 @@ void test_symbol_unicode (void)
     CompilerKitSymbol *symbol;
     g_test_message ("Testing Symbol unicode");
     g_test_timer_start ();
-    
-    /** @todo Test here  */
-    symbol = COMPILERKIT_SYMBOL (compilerkit_symbol_new(21488));
+   
+    gunichar ch = g_utf8_get_char("台");
 
-    g_assert(compilerkit_symbol_get_symbol (symbol) == '台');
+    symbol = COMPILERKIT_SYMBOL (compilerkit_symbol_new(ch));
+
+    g_assert(compilerkit_symbol_get_symbol (symbol) == ch /*'台'*/ );
 
     g_object_unref(symbol);
     
@@ -75,15 +77,4 @@ void test_symbol_flyweight (void)
     g_object_unref(symbol3);
     
     g_assert_cmpfloat(g_test_timer_elapsed (), <=, 1);
-}
-
-int main (int argc, char ** argv)
-{
-    g_test_init (&argc, &argv, NULL);
-    g_type_init ();
-
-    g_test_add_func ("/symbol/unicode", test_symbol_unicode);
-    g_test_add_func ("/symbol/flyweight", test_symbol_flyweight);
-   
-    g_test_run ();
 }

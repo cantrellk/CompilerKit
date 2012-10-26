@@ -17,10 +17,7 @@
  */
 #include <glib.h>
 #include "CompilerKit.h"
-
-/** 
- * @todo Write test cases for compilerkit_string_builder_visitor.
- */
+#include "test.h"
 
 /**
  * test_string_builder_visitor:
@@ -32,26 +29,24 @@
  */
 void test_string_builder_visitor (void)
 {
-    CompilerKitVisitor *string_builder;
-    g_test_message ("Testing StringBuilder visitor");
+    GObject *regex = compilerkit_alternation_vlist_new(
+        compilerkit_symbol_new('a'),
+        compilerkit_concatenation_new(
+            compilerkit_symbol_new('b'),
+            compilerkit_kleene_star_new(compilerkit_symbol_new('c'))
+        ),
+        compilerkit_empty_string_get_instance(),
+        compilerkit_complement_new (compilerkit_empty_set_get_instance()),
+        NULL);
+    gchar *str;
+    g_test_message ("Testing StringBuilder digits");
     g_test_timer_start ();
     
-    /** @todo Test here  */
-    string_builder = compilerkit_string_builder_visitor();
-    g_assert(FALSE);
+    str = compilerkit_to_string (regex);
+    g_assert(g_strcmp0(str, "a|b(c)*|''|!{}") == 0);
+    g_free (str);
     
-    g_object_unref (string_builder);
-
     // This test shouldn't take too long to run
     g_assert_cmpfloat(g_test_timer_elapsed (), <=, 1);
 }
 
-int main (int argc, char ** argv)
-{
-    g_test_init (&argc, &argv, NULL);
-    g_type_init ();
-
-    g_test_add_func ("/visitors/string_builder", test_string_builder_visitor);
-   
-    g_test_run ();
-}

@@ -18,8 +18,9 @@
 #include <glib.h>
 #include "CompilerKit.h"
 
-/** @todo Write test cases for compilerkit_bar_visitor of the form: void test_bar_case (void); */
-/** @todo Add to `main`: g_test_add_func ("/bar/case", test_bar_case); */
+/** @todo Write test cases for compilerkit_bar_visitor of the form: void test_bar_visitor_case (void); */
+/** @todo Add to `main`: g_test_add_func ("/bar-visitor/test", test_bar_visitor); */
+/** @todo Add to test.h: voit test_bar_visitor (void); */
 
 /**
  * test_bar_visitor:
@@ -44,19 +45,4 @@ void test_bar_visitor (void)
 
     // This test shouldn't take too long to run
     g_assert_cmpfloat(g_test_timer_elapsed (), <=, 1);
-}
-
-int main (int argc, char ** argv)
-{
-    g_test_init (&argc, &argv, NULL);
-    g_type_init ();
-
-    g_test_add_func ("/visitors/bar", test_bar_visitor);
-
-    /**
-     * @todo Add additional test cases as necessary here:
-     * g_test_add_func ("/bar/other_case", test_bar_visitor_other_case);
-     */
-    
-    g_test_run ();
 }

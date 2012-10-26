@@ -16,21 +16,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "CompilerKit.h"
-
-/** 
- * @todo Add the following to include/visitors.h:
- *     CompilerKitVisitor *compilerkit_string_builder_visitor ();
- */
+#include <glib.h>
 
 /* StringBuilder alternation. */
 static GObject *string_builder_alternation (CompilerKitVisitor *self, GObject *obj)
 {
     CompilerKitAlternation *alt;
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
     g_assert(COMPILERKIT_IS_ALTERNATION(obj));
     
     alt = COMPILERKIT_ALTERNATION (obj);
 
     compilerkit_visitor_visit(self, compilerkit_alternation_get_left  (alt));
+    g_string_append_c(str, '|');
     compilerkit_visitor_visit(self, compilerkit_alternation_get_right (alt));
 
     return NULL;
@@ -54,11 +52,15 @@ static GObject *string_builder_concatenation (CompilerKitVisitor *self, GObject 
 static GObject *string_builder_kleene_star (CompilerKitVisitor *self, GObject *obj)
 {
     CompilerKitKleeneStar *star;
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
+
     g_assert(COMPILERKIT_IS_KLEENE_STAR(obj));
     
     star = COMPILERKIT_KLEENE_STAR (obj);
     
+    g_string_append_c (str, '(');
     compilerkit_visitor_visit(self, compilerkit_kleene_star_get_node (star));
+    g_string_append (str, ")*");
 
     return NULL;
 }
@@ -67,10 +69,13 @@ static GObject *string_builder_kleene_star (CompilerKitVisitor *self, GObject *o
 static GObject *string_builder_complement (CompilerKitVisitor *self, GObject *obj)
 {
     CompilerKitComplement *comp;
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
+
     g_assert(COMPILERKIT_IS_COMPLEMENT(obj));
     
     comp = COMPILERKIT_COMPLEMENT (obj);
     
+    g_string_append_c (str, '!');
     compilerkit_visitor_visit(self, compilerkit_complement_get_node (comp));
 
     return NULL;
@@ -81,18 +86,20 @@ static GObject *string_builder_complement (CompilerKitVisitor *self, GObject *ob
 static GObject *string_builder_symbol (CompilerKitVisitor *self, GObject *obj)
 {
     CompilerKitSymbol *symbol;
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
     g_assert(COMPILERKIT_IS_SYMBOL(obj));
     
     symbol = COMPILERKIT_SYMBOL (obj);
     
-    compilerkit_symbol_get_symbol(symbol);
+    g_string_append_unichar(str, compilerkit_symbol_get_symbol(symbol));
     return NULL;
 }
 
 /* StringBuilder empty set. */
 static GObject *string_builder_empty_set (CompilerKitVisitor *self, GObject *obj)
 {
-    g_assert(COMPILERKIT_IS_EMPTY_SET(obj));
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
+    g_string_append (str, "{}");
 
     return NULL;
 }
@@ -100,7 +107,8 @@ static GObject *string_builder_empty_set (CompilerKitVisitor *self, GObject *obj
 /* StringBuilder empty string. */
 static GObject *string_builder_empty_string (CompilerKitVisitor *self, GObject *obj)
 {
-    g_assert(COMPILERKIT_IS_EMPTY_STRING(obj));
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
+    g_string_append (str, "''");
 
     return NULL;
 }
@@ -108,7 +116,21 @@ static GObject *string_builder_empty_string (CompilerKitVisitor *self, GObject *
 /* StringBuilder grammar. */
 static GObject *string_builder_grammar (CompilerKitVisitor *self, GObject *obj)
 {
-   return NULL;
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
+    GList *productions;
+    CompilerKitGrammar *grammar;
+    
+    g_assert(COMPILERKIT_IS_GRAMMAR(obj));
+    
+    grammar = COMPILERKIT_GRAMMAR (obj);
+    productions = compilerkit_grammar_productions (grammar);
+    
+    while (productions)
+    {
+        compilerkit_visitor_visit (self, productions->data);
+        productions = g_list_next (productions);
+    }
+    return NULL;
 }
 
 /* StringBuilder terminal. */
@@ -120,25 +142,42 @@ static GObject *string_builder_terminal (CompilerKitVisitor *self, GObject *obj)
 /* StringBuilder nonterminal. */
 static GObject *string_builder_nonterminal (CompilerKitVisitor *self, GObject *obj)
 {
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
+    CompilerKitNonterminal *nonterminal;
+    
+    g_assert(COMPILERKIT_IS_NONTERMINAL(obj));
+    
+    nonterminal = COMPILERKIT_NONTERMINAL (obj);
+    g_string_append (str, compilerkit_nonterminal_get_name(nonterminal));
+
     return NULL;
 }
 
 /* StringBuilder production. */
 static GObject *string_builder_production (CompilerKitVisitor *self, GObject *obj)
 {
+    GString *str = (GString *) compilerkit_visitor_get_state(self);
+    CompilerKitProduction *production;
+    GList *replacement;
+    
+    g_assert(COMPILERKIT_IS_PRODUCTION(obj));
+    
+    production = COMPILERKIT_PRODUCTION (obj);
+
+    compilerkit_visitor_visit (self, compilerkit_production_get_variable(production));
+    g_string_append (str, " -> ");
+    replacement = compilerkit_production_get_replacement(production);
+    while (replacement)
+    {
+        compilerkit_visitor_visit (self, (GObject *)replacement->data);
+        replacement = g_list_next (replacement);
+    }
+    g_string_append (str, "\n");
     return NULL;
 }
 
-/**
- * compilerkit_string_builder_visitor:
- * @fn compilerkit_string_builder_visitor
- * Construct a string_builder visitor.
- * @pre None
- * @param None
- * @return A CompilerKitVisitor*.
- * @memberof CompilerKitVisitor
- */
-CompilerKitVisitor *compilerkit_string_builder_visitor ()
+/* StringBuilder visitor */
+static CompilerKitVisitor *compilerkit_string_builder_visitor ()
 {
     CompilerKitVisitor *visitor;
     visitor = compilerkit_visitor_new();
@@ -154,9 +193,33 @@ CompilerKitVisitor *compilerkit_string_builder_visitor ()
     
     /* CFG visitors */
     compilerkit_visitor_register (visitor, COMPILERKIT_TYPE_GRAMMAR, string_builder_grammar);
-    compilerkit_visitor_register (visitor, COMPILERKIT_TYPE_NONTERMINAL, string_builder_concatenation);
-    compilerkit_visitor_register (visitor, COMPILERKIT_TYPE_TERMINAL, string_builder_kleene_star);
+    compilerkit_visitor_register (visitor, COMPILERKIT_TYPE_NONTERMINAL, string_builder_nonterminal);
+    compilerkit_visitor_register (visitor, COMPILERKIT_TYPE_TERMINAL, string_builder_terminal);
     compilerkit_visitor_register (visitor, COMPILERKIT_TYPE_PRODUCTION, string_builder_production);
     
+    compilerkit_visitor_set_state (visitor, g_string_new(""));
+    
     return visitor;
+}
+
+/**
+ * compilerkit_to_string:
+ * @fn compilerkit_to_string
+ * Return a string representation of an object (i.e., regex, grammar).
+ * @pre None
+ * @param GObject* An object
+ * @return A string representation of the object. The caller must free the returned string with `g_free()`
+ * @memberof CompilerKitVisitor
+ */
+gchar *compilerkit_to_string (GObject *obj)
+{
+    GString *str;
+    CompilerKitVisitor *visitor = compilerkit_string_builder_visitor();
+    
+    compilerkit_visitor_visit(visitor, obj);
+    
+    str = (GString *) compilerkit_visitor_get_state(visitor);
+    g_object_unref (visitor);
+    
+    return g_string_free (str, FALSE);
 }
